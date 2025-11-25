@@ -34,9 +34,9 @@ function toBytes32HexForDest(toAddress, destEid) {
   return addressToBytes32(toAddress);
 }
 
-const CrossChainSendForm = ({ account }) => {
+const CrossChainSendForm = ({ account, chainId: currentChainId }) => {
 
-  const [chainId, setChainId] = useState(null);
+  // const [chainId, setChainId] = useState(null);
   const [config, setConfig] = useState(null);
 
   const [to, setTo] = useState("");
@@ -45,32 +45,52 @@ const CrossChainSendForm = ({ account }) => {
 
   const [status, setStatus] = useState("");
 
-  // Detect chain
+  // This now reacts when parent chainId changes!
   useEffect(() => {
-    const detectChain = async () => {
-      if (!window.ethereum) return;
+    const conf = getChainConfig(currentChainId);
+    setConfig(conf);
+    setDestEid(""); // auto-reset destination on network change
+  }, [currentChainId]);
 
-      const id = await window.ethereum.request({ method: "eth_chainId" });
-      console.log("Detected chainId (hex):", id);
-      const parsed = parseInt(id, 16);
-      console.log("Detected chainId (dec):", parsed);
-      setChainId(parsed);
+  // Detect chain
+  // useEffect(() => {
+  //   const detectChain = async () => {
+  //     if (!window.ethereum) return;
 
-      const conf = getChainConfig(parsed);
-      setConfig(conf);
-    };
+  //     const id = await window.ethereum.request({ method: "eth_chainId" });
+  //     console.log("Detected chainId (hex):", id);
+  //     const parsed = parseInt(id, 16);
+  //     console.log("Detected chainId (dec):", parsed);
+  //     setChainId(parsed);
 
-    detectChain();
+  //     const conf = getChainConfig(parsed);
+  //     setConfig(conf);
+  //   };
 
-    window.ethereum?.on("chainChanged", () => {
-      window.location.reload();
-    });
-  }, []);
+  //   detectChain();
+
+  //   // window.ethereum?.on("chainChanged", () => {
+  //   //   window.location.reload();
+  //   // });
+  // }, []);
+
+
+  // ✅ reset destination when network changes
+  useEffect(() => {
+    setDestEid("");
+  }, [currentChainId]);
 
   // --- helper for dropdown ---
 const getDestinationChains = (currentChainId) => {
+  const current = chainConfig[currentChainId];
+
+  if (!current) return [];
+
   return Object.entries(chainConfig)
-    .filter(([id]) => Number(id) !== Number(currentChainId))
+      .filter(([id, cfg]) =>
+      Number(id) !== Number(currentChainId) && // ✅ exclude same chainId
+      cfg.srcEid !== current.srcEid           // ✅ exclude same srcEid
+    )
     .map(([id, cfg]) => ({
       chainId: Number(id),
       label: cfg.label,
@@ -183,7 +203,7 @@ const getDestinationChains = (currentChainId) => {
 
       console.log("Transaction sent:", tx);
   
-      const cfg = chainConfig[Number(chainId)];
+      const cfg = chainConfig[Number(currentChainId)];
       console.log("Current Explorer Base URL:", cfg);
       console.log("Explorer URL:", cfg.explorer , tx.transactionHash);
 
@@ -212,6 +232,8 @@ const getDestinationChains = (currentChainId) => {
     );
 
   return (
+
+  <div>
     
     <div className="p-4 max-w-md mx-auto border rounded mt-6">
 
@@ -221,7 +243,7 @@ const getDestinationChains = (currentChainId) => {
     <select className="border w-full p-2 rounded"value={destEid}
     onChange={(e) => setDestEid(e.target.value)}>
     <option value="">Select destination</option>
-    {getDestinationChains(chainId).map((chain) => (
+    {getDestinationChains(currentChainId).map((chain) => (
       <option key={chain.chainId} value={chain.destEid}>
         {chain.label}
       </option>
@@ -256,6 +278,29 @@ const getDestinationChains = (currentChainId) => {
 
       <p className="mt-4 text-sm text-gray-700">{status}</p>
     </div>
+
+    <div className="mt-12 flex justify-center">
+      <div className="w-full max-w-2xl p-6 bg-white border border-gray-300 rounded-xl shadow-sm">
+        <h3 className="text-center font-bold text-gray-800 text-lg mb-5">
+          OFT Contract Addresses
+        </h3>
+        
+        <div className="space-y-4">
+          {Object.entries(chainConfig).map(([id, cfg]) => (
+            <div key={id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50 px-4 py-3 rounded-lg">
+              <span className="font-semibold text-gray-700">{cfg.label}</span>
+              <code className="text-xs sm:text-sm font-mono text-gray-800 break-all">
+                {cfg.contract}
+              </code>
+            </div>
+          ))}
+        </div>
+        </div>
+      </div>
+    
+  </div>
+
+    
   );
 };
 

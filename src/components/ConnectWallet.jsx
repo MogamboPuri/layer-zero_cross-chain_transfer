@@ -1,6 +1,7 @@
 import React from "react";
+import { supportedNetworks } from "../config/chainConfig";
 
-const ConnectWallet = ({ account, onConnect, onDisconnect }) => {
+const ConnectWallet = ({ account, onConnect, onDisconnect, onSwitchNetwork,   chainId}) => {
   return (
     <div className="w-full flex justify-end gap-3 p-4 border-b">
 
@@ -13,10 +14,22 @@ const ConnectWallet = ({ account, onConnect, onDisconnect }) => {
         </button>
       ) : (
         <>
-          <button
-            className="px-4 py-2 bg-gray-200 text-black rounded"
+          {/* SHOW NETWORK DROPDOWN */}
+          <select
+            className="px-3 py-2 border rounded"
+            value={chainId}
+            onChange={(e) => onSwitchNetwork(e.target.value)}
           >
-            {account.slice(0, 6) + "..." + account.slice(-4)}
+            {supportedNetworks.map((net) => (
+              <option key={net.chainId} value={net.chainId}>
+                {net.label}
+              </option>
+            ))}
+          </select>
+
+          {/* ACCOUNT DISPLAY */}
+          <button className="px-4 py-2 bg-gray-200 text-black rounded">
+            {account.slice(0, 6)}...{account.slice(-4)}
           </button>
 
           <button

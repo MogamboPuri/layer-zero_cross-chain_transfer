@@ -11,7 +11,7 @@ export const chainConfig = {
       label: "Polygon Amoy",
       srcEid: 40267,
       contract: "0xf7032caEF9E236F83e4e508d8Fd7Cb7c0ea16573",
-      explorer: "https://www.oklink.com/amoy/tx/"
+      explorer: "https://amoy.polygonscan.com/"
     },
   
     11155111: {                 // Sepolia
@@ -35,4 +35,13 @@ export const chainConfig = {
   export function getChainConfig(chainId) {
     return chainConfig[chainId] || null;
   }
+
+  export const supportedNetworks = Object.entries(chainConfig)
+  .filter(([id]) => Number(id) !== 1399811149) // ❌ exclude Solana
+  .map(([chainId, cfg]) => ({
+      chainId,
+      label: cfg.label,
+    })
+  );
+  
   
